@@ -1,27 +1,87 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart'; // Import fluttertoast package
 import 'package:flutter_front/screens/signin_screen.dart';
 import 'package:flutter_front/themes/theme.dart';
 import 'package:flutter_front/widgets/custom_scaffold.dart';
+import 'package:intl_phone_field/intl_phone_field.dart'; // Import intl_phone_field package
+import 'package:csc_picker/csc_picker.dart';
+//import 'package:flutter_front/screens/routes.dart';
+
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
+  
 }
+
+
 
 enum UserType { professional, client }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-    final _formSignupKey = GlobalKey<FormState>();
+  final _formSignupKey = GlobalKey<FormState>();
   bool agreePersonalData = true;
   String _password = ''; // Variable to store the password
+  String _confirmPassword = ''; // Variable to store the confirmed password
   bool _obscureText = true; // Variable to toggle password visibility
-  UserType? _userType;
+  int? role;
+  String countryValue = "";
+  String stateValue = "";
+  String cityValue = "";
+  String firstname = "";
+  String lastname = "";
+  String email ="";
+  String phone="";
+  String? profession;
+  String address="";
+  Map<String, dynamic> constructFormData() {
+    return {
+      'email': email,
+      'password': _password,
+      'role': role,
+      'firstname': firstname,
+      'lastname': lastname,
+      'phone': phone,
+      'profession': profession,
+      'address': address,
+      'city': cityValue,
+      'country': countryValue,
+      'state': stateValue,
+    };
+  }
+  Future<void> signUp() async {
+  final url = Uri.parse('http://localhost:5032/api/Auth/register');
+  final headers = {'Content-Type': 'application/json'};
 
-  List<bool> _selectedDays = List.filled(7, false); // List to track selected days
+  final body = jsonEncode(constructFormData());
+  final response = await http.post(url,headers: headers, body: body);
 
+  if (response.statusCode == 200) {
+  print('Registration successful: ${response.body}');
+   // Clear form fields after successful registration
+    _formSignupKey.currentState!.reset();
+    email = '';
+    _password = '';
+    _confirmPassword = '';
+    role = null;
+    firstname = '';
+    lastname = '';
+    phone = '';
+    profession = null;
+    address = '';
+    cityValue = '';
+    countryValue = '';
+    stateValue = '';
+  } else {
+    print('Registration failed: ${response.body}');
+    throw Exception('Failed to register');
+  }
+}
   @override
   Widget build(BuildContext context) {
     return CustomScaffold(
@@ -65,6 +125,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       // first name
                       TextFormField(
+                         onChanged: (value) {
+                          setState(() {
+                         firstname = value;
+                         });
+                         },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter first name';
@@ -98,6 +163,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       // last name
                       TextFormField(
+                        onChanged: (value) {
+                          setState(() {
+                         lastname = value;
+                         });
+                         },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter last name';
@@ -131,6 +201,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       // email
                       TextFormField(
+                        onChanged: (value) {
+                          setState(() {
+                         email = value;
+                         });
+                         },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter Email';
@@ -159,7 +234,117 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ),
                       ),
-                       // password
+                      const SizedBox(
+                        height: 25.0,
+                      ),
+                      Row(
+                        children: [
+                          // CSC Picker Widget
+                          Expanded(
+                            
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Adding CSC Picker Widget in app
+                                  CSCPicker(
+                                    showStates: true,
+                                    showCities: true,
+                                    flagState: CountryFlag.DISABLE,
+                                    dropdownDecoration: BoxDecoration(
+                                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                                      color: Colors.white,
+                                      border: Border.all(color: Colors.grey.shade300, width: 1),
+                                    ),
+                                    disabledDropdownDecoration: BoxDecoration(
+                                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                                      color: Colors.grey.shade300,
+                                      border: Border.all(color: Colors.grey.shade300, width: 1),
+                                    ),
+                                    countrySearchPlaceholder: "Country",
+                                    stateSearchPlaceholder: "State",
+                                    citySearchPlaceholder: "City",
+                                    countryDropdownLabel: "*Country",
+                                    stateDropdownLabel: "*State",
+                                    cityDropdownLabel: "*City",
+                                    selectedItemStyle: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 14,
+                                    ),
+                                    dropdownHeadingStyle: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    dropdownItemStyle: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 14,
+                                    ),
+                                    dropdownDialogRadius: 10.0,
+                                    searchBarRadius: 10.0,
+                                    onCountryChanged: (value) {
+                                      setState(() {
+                                        countryValue = value;
+                                      });
+                                    },
+                                    onStateChanged: (String? value) {
+                                      setState(() {
+                                        stateValue = value ?? ''; // Assigning selected state value
+                                      });
+                                    },
+                                    onCityChanged: (String? value) {
+                                      setState(() {
+                                        cityValue = value ?? ''; // Assigning selected city value
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 25.0,
+                      ),
+                      // Phone number
+                      Row(
+                        children: [
+                          // Phone number field
+                          Expanded(
+                            child: IntlPhoneField(
+                              decoration: InputDecoration(
+                                labelText: 'Phone Number',
+                                hintText: 'Enter Phone Number',
+                                hintStyle: const TextStyle(
+                                  color: Colors.black26,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderSide: const BorderSide(
+                                    color: Colors.black12, // Default border color
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: const BorderSide(
+                                    color: Colors.black12, // Default border color
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              initialCountryCode: 'US',
+                              onChanged: (value) {
+                                phone=value.completeNumber;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 25.0,
+                      ),
+                      // password
                       TextFormField(
                         obscureText: _obscureText,
                         onChanged: (value) {
@@ -206,16 +391,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ),
                       ),
-
-
-                        
-                      
                       const SizedBox(
                         height: 25.0,
                       ),
                       // confirmation password
                       TextFormField(
-                        obscureText: true,
+                        obscureText: _obscureText,
+                        onChanged: (value) {
+                          _confirmPassword = value;
+                        },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter Confirm Password';
@@ -259,11 +443,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             children: [
                               // Professional radio button
                               Radio(
-                                value: UserType.professional,
-                                groupValue: _userType,
-                                onChanged: (UserType? value) {
+                                value: 0,
+                                groupValue: role,
+                                onChanged: (int? value) {
                                   setState(() {
-                                    _userType = value;
+                                    role = value;
                                   });
                                 },
                               ),
@@ -271,11 +455,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                               // Client radio button
                               Radio(
-                                value: UserType.client,
-                                groupValue: _userType,
-                                onChanged: (UserType? value) {
+                                value: 1,
+                                groupValue: role,
+                                onChanged: (int? value) {
                                   setState(() {
-                                    _userType = value;
+                                    role = value;
                                   });
                                 },
                               ),
@@ -288,7 +472,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         height: 25.0,
                       ),
                       // Choose a profession
-                      if (_userType == UserType.professional)
+                      if (role == 0)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -326,13 +510,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                                 // Add more professions here
                               ],
-                              onChanged: (String? value) {},
+                              onChanged: (String? value) {
+                                profession=value;
+                              },
                             ),
                             const SizedBox(
                               height: 25.0,
                             ),
                             // Address
                             TextFormField(
+                              onChanged: (value) {
+                          setState(() {
+                         address = value;
+                         });
+                         },
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter Address';
@@ -362,73 +553,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             const SizedBox(
                               height: 25.0,
                             ),
-                            // My working days are
-                            Text(
-                              'My working days are:',
-                              style: TextStyle(fontSize: 16),
-                            ),
-                            Wrap(
-                              spacing: 8.0,
-                              runSpacing: 8.0,
-                              children: List.generate(7, (index) {
-                                final day = index + 1;
-                                final dayName = _getDayName(day);
-                                return CheckboxListTile(
-                                  title: Text(dayName),
-                                  value: _selectedDays[index],
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedDays[index] = value!;
-                                    });
-                                  },
-                                );
-                              }),
-                            ),
-                            const SizedBox(
-                              height: 25.0,
-                            ),
+                          
                           ],
                         ),
-                      // Phone number
-                      Row(
-                        children: [
-                          
-                          // Phone number field
-                          Expanded(
-                            child: TextFormField(
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter Phone Number';
-                                }
-                                return null;
-                              },
-                              keyboardType: TextInputType.phone,
-                              decoration: InputDecoration(
-                                label: const Text('Phone Number'),
-                                hintText: 'Enter Phone Number',
-                                hintStyle: const TextStyle(
-                                  color: Colors.black26,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                    color: Colors.black12, // Default border color
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                    color: Colors.black12, // Default border color
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 25.0,
-                      ),
                       // i agree to the processing
                       Row(
                         children: [
@@ -463,14 +590,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (_formSignupKey.currentState!.validate() &&
-                                agreePersonalData) {
-                              _showToast('Processing Data');
+                       onPressed: () {
+                        if (_formSignupKey.currentState!.validate() &&
+                          agreePersonalData &&
+                          _password == _confirmPassword) {
+                         _showToast('Welcome! Please login');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => SignInScreen()),
+                              );
+                            signUp(); 
                             } else if (!agreePersonalData) {
-                              _showToast('Please agree to the processing of personal data');
-                            }
-                          },
+                             _showToast('Please agree to the processing of personal data');
+                           } else if (_password != _confirmPassword) {
+                            _showToast('Passwords do not match');
+                           }
+                        },
                           child: const Text('Sign up'),
                         ),
                       ),
@@ -609,26 +744,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       fontSize: 16.0,
     );
   }
+  
 
-  // Function to get the name of the day
-  String _getDayName(int day) {
-    switch (day) {
-      case 1:
-        return 'Monday';
-      case 2:
-        return 'Tuesday';
-      case 3:
-        return 'Wednesday';
-      case 4:
-        return 'Thursday';
-      case 5:
-        return 'Friday';
-      case 6:
-        return 'Saturday';
-      case 7:
-        return 'Sunday';
-      default:
-        return '';
-    }
-  }
+  
 }

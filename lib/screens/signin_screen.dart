@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_front/screens/signup_screen.dart';
 import 'package:flutter_front/themes/theme.dart';
 import 'package:flutter_front/widgets/custom_scaffold.dart';
-//import 'package:icons_plus/icons_plus.dart';
-import 'package:flutter_front/screens/signup_screen.dart';
-
+import 'package:flutter_front/screens/client_home.dart';
+import 'package:flutter_front/screens/prof_home.dart';
+import 'package:http/http.dart' as http;
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -14,10 +17,40 @@ class SignInScreen extends StatefulWidget {
 
 class _SignInScreenState extends State<SignInScreen> {
   final _formSignInKey = GlobalKey<FormState>();
-  bool rememberPassword = true;
-   bool _obscureText = true;
-    // ignore: unused_field
-    String _password = ''; 
+  TextEditingController _emailController = TextEditingController();
+  TextEditingController _passwordController = TextEditingController();
+  bool _obscureText = true;
+
+  Future<void> _login() async {
+  String email = _emailController.text;
+  String password = _passwordController.text;
+
+  var url = Uri.parse('http://localhost:5032/api/Auth/login');
+  var response = await http.post(
+    url,
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({'username': email, 'password': password}),
+  );
+
+  if (response.statusCode == 200) {
+    var responseData = json.decode(response.body);
+    print(responseData);
+    String role = responseData['role'].toString();
+
+    // Navigate based on role
+    if (role == '0') {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ProfHome()));
+    } else if (role == '1') {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ClientHome()));
+    }
+  } else {
+    print(response.body);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(response.body),
+    ));
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return CustomScaffold(
@@ -58,6 +91,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         height: 40.0,
                       ),
                       TextFormField(
+                        controller: _emailController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter Email';
@@ -84,11 +118,14 @@ class _SignInScreenState extends State<SignInScreen> {
                           ),
                         ),
                       ),
-                     // password
-TextFormField(
+                      const SizedBox(
+                        height: 25.0,
+                      ),
+                      TextFormField(
+  controller: _passwordController,
   obscureText: _obscureText,
   onChanged: (value) {
-    _password = value;
+    // No need to manually manage _password, it's handled by the controller
   },
   validator: (value) {
     if (value == null || value.isEmpty) {
@@ -116,7 +153,6 @@ TextFormField(
     ),
     suffixIcon: IconButton(
       onPressed: () {
-        // Toggle password visibility
         setState(() {
           _obscureText = !_obscureText;
         });
@@ -132,112 +168,16 @@ TextFormField(
                       const SizedBox(
                         height: 25.0,
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: rememberPassword,
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    rememberPassword = value!;
-                                  });
-                                },
-                                activeColor: lightColorScheme.primary,
-                              ),
-                              const Text(
-                                'Remember me',
-                                style: TextStyle(
-                                  color: Colors.black45,
-                                ),
-                              ),
-                            ],
-                          ),
-                          GestureDetector(
-                            child: Text(
-                              'Forgot password?',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: lightColorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 25.0,
-                      ),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (_formSignInKey.currentState!.validate() &&
-                                rememberPassword) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Processing Data'),
-                                ),
-                              );
-                            } else if (!rememberPassword) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text(
-                                        'Please agree to the processing of personal data')),
-                              );
-                            }
-                          },
+                          onPressed: _login,
                           child: const Text('Sign in'),
                         ),
                       ),
                       const SizedBox(
                         height: 25.0,
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Divider(
-                              thickness: 0.7,
-                              color: Colors.grey.withOpacity(0.5),
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(
-                              vertical: 0,
-                              horizontal: 10,
-                            ),
-                            child: Text(
-                              'Sign up with',
-                              style: TextStyle(
-                                color: Colors.black45,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Divider(
-                              thickness: 0.7,
-                              color: Colors.grey.withOpacity(0.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 25.0,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                         /// Logo(Logos.facebook_f),
-                         // Logo(Logos.twitter),
-                         // Logo(Logos.google),
-                         // Logo(Logos.apple),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 25.0,
-                      ),
-                      // don't have an account
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -252,7 +192,7 @@ TextFormField(
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (e) => const SignUpScreen(),
+                                  builder: (context) => const SignUpScreen(),
                                 ),
                               );
                             },
