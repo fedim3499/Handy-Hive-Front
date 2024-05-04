@@ -4,4 +4,7 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <application>
+    <meta-data android:name="com.mapbox.token" android:value="pk.eyJ1IjoiZmVkaW0zNDk5IiwiYSI6ImNsdnJ6MWV3OTBzcjUybG1oaW10NjFtejkifQ.VWX7sRZCOlue81zmJmGkjQ" />
+    </application>
 </manifest>
